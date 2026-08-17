@@ -27,17 +27,21 @@ class SettingsController extends Controller
     {
         $this->requireManager();
 
-        $employees = User::orderBy('name')
-            ->withCount([
-                'leaveRequests as used_days' => fn($q) => $q
-                    ->where('status', 'approved')
-                    ->where(function ($sq) {
-                        $sq->whereNull('leave_type_id')
-                           ->orWhereHas('leaveType', fn($ltq) => $ltq->where('counts_toward_allowance', true));
-                    })
-                    ->select(\DB::raw('sum(days)')),
-            ])
+        $usedDaysQuery = fn($q) => $q
+            ->where('status', 'approved')
+            ->where(function ($sq) {
+                $sq->whereNull('leave_type_id')
+                   ->orWhereHas('leaveType', fn($ltq) => $ltq->where('counts_toward_allowance', true));
+            })
+            ->select(\DB::raw('sum(days)'));
+
+        $employees = User::active()->orderBy('name')
+            ->withCount(['leaveRequests as used_days' => $usedDaysQuery])
             ->with('departments')
+            ->get();
+
+        $archivedEmployees = User::whereNotNull('archived_at')->orderBy('name')
+            ->withCount(['leaveRequests as used_days' => $usedDaysQuery])
             ->get();
 
         $bankHolidays  = BankHoliday::orderBy('date')->get();
@@ -50,7 +54,7 @@ class SettingsController extends Controller
             ->get()
             ->keyBy('user_id');
 
-        return view('settings.index', compact('employees', 'bankHolidays', 'leaveTypes', 'departments', 'attendanceDate', 'checkins'));
+        return view('settings.index', compact('employees', 'archivedEmployees', 'bankHolidays', 'leaveTypes', 'departments', 'attendanceDate', 'checkins'));
     }
 
     // ── Employees ─────────────────────────────────────────────────────────────
@@ -150,6 +154,38 @@ class SettingsController extends Controller
         $user->update(['password' => Hash::make($validated['password'])]);
 
         return back()->with('success', "{$user->name}'s password has been updated.");
+    }
+
+    public function archiveEmployee(Request $request, User $user)
+    {
+        $this->requireManager();
+
+        if ($user->id === Auth::id()) {
+            return back()->withErrors(['general' => 'You cannot archive your own account.']);
+        }
+
+        $validated = $request->validate([
+            'finish_date' => 'nullable|date',
+        ]);
+
+        $user->update([
+            'archived_at' => now(),
+            'finish_date' => $validated['finish_date'] ?? null,
+        ]);
+
+        return back()->with('success', "{$user->name} has been archived.");
+    }
+
+    public function unarchiveEmployee(User $user)
+    {
+        $this->requireManager();
+
+        $user->update([
+            'archived_at' => null,
+            'finish_date' => null,
+        ]);
+
+        return back()->with('success', "{$user->name} has been restored.");
     }
 
     public function updateDays(Request $request, User $user)

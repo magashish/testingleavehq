@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn() => redirect()->route('dashboard'));
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'not_archived'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -45,6 +45,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/settings/employees/{user}', [SettingsController::class, 'removeEmployee'])->name('settings.employees.remove');
     Route::patch('/settings/employees/{user}/days', [SettingsController::class, 'updateDays'])->name('settings.employees.days');
     Route::patch('/settings/employees/{user}/password', [SettingsController::class, 'changePassword'])->name('settings.employees.password');
+    Route::post('/settings/employees/{user}/archive', [SettingsController::class, 'archiveEmployee'])->name('settings.employees.archive');
+    Route::post('/settings/employees/{user}/unarchive', [SettingsController::class, 'unarchiveEmployee'])->name('settings.employees.unarchive');
 
     // Bank holidays
     Route::post('/settings/bank-holidays', [SettingsController::class, 'addBankHoliday'])->name('settings.bank-holidays.add');

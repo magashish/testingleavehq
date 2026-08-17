@@ -19,6 +19,7 @@
     showEditDeptModal: false,
     showCheckinModal: false,
     showPwModal: false, pwEmp: {},
+    showArchiveModal: false, archiveEmp: {},
     empColor: '#38bdf8',
     editEmpColor: '#38bdf8',
     editEmp: {},
@@ -193,6 +194,29 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline" @click="showPwModal = false">Cancel</button>
                         <button type="submit" class="btn btn-primary">Update password</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+
+    {{-- ── Archive Employee Modal ── --}}
+    <template x-if="showArchiveModal">
+        <div class="modal-overlay" @click.self="showArchiveModal = false">
+            <div class="modal">
+                <h3>Archive Employee</h3>
+                <p style="font-size:13px;color:#888;margin-bottom:16px;">
+                    <strong x-text="archiveEmp.name"></strong> will no longer appear in team views or leave booking. Their leave history is preserved and can be viewed in reports.
+                </p>
+                <form method="POST" :action="'/settings/employees/' + archiveEmp.id + '/archive'">
+                    @csrf
+                    <div class="form-group">
+                        <label class="form-label">Finish date <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                        <input type="date" name="finish_date" class="form-input">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" @click="showArchiveModal = false">Cancel</button>
+                        <button type="submit" class="btn btn-primary" style="background:#f97316;border-color:#f97316;">Archive employee</button>
                     </div>
                 </form>
             </div>
@@ -468,6 +492,12 @@
                                         <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                                     </button>
                                     @if($emp->id !== Auth::id())
+                                        <button class="icon-btn" title="Archive employee (they have left)"
+                                            @click="archiveEmp = { id: {{ $emp->id }}, name: '{{ addslashes($emp->name) }}' }; showArchiveModal = true">
+                                            <svg width="14" height="14" fill="none" stroke="#f97316" stroke-width="2" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                                        </button>
+                                    @endif
+                                    @if($emp->id !== Auth::id())
                                         <form method="POST" action="{{ route('settings.employees.remove', $emp) }}"
                                             onsubmit="return confirm('Remove {{ $emp->name }}? Their leave history will also be deleted.')">
                                             @csrf @method('DELETE')
@@ -483,6 +513,63 @@
                 </tbody>
             </table>
         </div>
+
+        @if($archivedEmployees->isNotEmpty())
+        <div class="card" style="margin-top:16px;">
+            <div class="card-title" style="color:#888;font-size:13px;">
+                Former Employees ({{ $archivedEmployees->count() }})
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Job title</th>
+                        <th>Finish date</th>
+                        <th>Leave used</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($archivedEmployees as $emp)
+                        @php $used = $emp->used_days ?? 0; @endphp
+                        <tr style="opacity:0.7;">
+                            <td>
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <div class="avatar" style="width:28px;height:28px;font-size:10px;background:{{ $emp->color }}33;color:{{ $emp->color }}">
+                                        {{ $emp->initials() }}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:500;font-size:13px;">{{ $emp->name }}</div>
+                                        <div style="font-size:11px;color:#888;">{{ $emp->email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="color:#555;font-size:13px;">{{ $emp->role }}</td>
+                            <td style="font-size:13px;color:#888;">
+                                {{ $emp->finish_date ? $emp->finish_date->format('j M Y') : '—' }}
+                            </td>
+                            <td style="font-size:13px;color:#888;">{{ $used }} / {{ $emp->days_allowed }}</td>
+                            <td>
+                                <div style="display:flex;gap:6px;">
+                                    <form method="POST" action="{{ route('settings.employees.unarchive', $emp) }}">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline btn-sm" title="Restore this employee">Restore</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('settings.employees.remove', $emp) }}"
+                                        onsubmit="return confirm('Permanently delete {{ $emp->name }}? This cannot be undone.')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="icon-btn danger" title="Permanently delete">
+                                            <svg width="14" height="14" fill="none" stroke="#ef4444" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
     </div>
 
     {{-- ── Leave Types Tab ── --}}

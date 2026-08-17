@@ -37,6 +37,8 @@ class User extends Authenticatable
         'color',
         'profile_photo',
         'work_location',
+        'archived_at',
+        'finish_date',
     ];
 
     protected $hidden = [
@@ -48,7 +50,16 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password'          => 'hashed',
         'is_manager'        => 'boolean',
+        'archived_at'       => 'datetime',
+        'finish_date'       => 'date',
     ];
+
+    // ── Scopes ───────────────────────────────────────────────────────────────
+
+    public function scopeActive($query)
+    {
+        return $query->whereNull('archived_at');
+    }
 
     // ── Role helpers ─────────────────────────────────────────────────────────
 
@@ -70,6 +81,11 @@ class User extends Authenticatable
     public function isIntern(): bool
     {
         return $this->role_type === self::ROLE_INTERN;
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->archived_at !== null;
     }
 
     /** Contractors and Interns have no holiday allowance */

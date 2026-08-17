@@ -68,7 +68,7 @@ class TeamController extends Controller
             ->map(fn($d) => $d->toDateString())
             ->toArray();
 
-        $employees = User::with([
+        $employees = User::active()->with([
             'leaveRequests' => fn($q) => $q
                 ->with('leaveType')
                 ->where('status', 'approved')
@@ -140,7 +140,7 @@ class TeamController extends Controller
             ->orWhere(fn($q) => $q->whereRaw('LOWER(name) = ?', ['wfh']))
             ->value('color');
 
-        $employees = User::with([
+        $employees = User::active()->with([
             'leaveRequests' => fn($q) => $q
                 ->with('leaveType')
                 ->where('status', 'approved')

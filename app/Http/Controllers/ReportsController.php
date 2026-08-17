@@ -16,7 +16,12 @@ class ReportsController extends Controller
     {
         if (!Auth::user()->isManager()) abort(403);
 
-        $employees  = User::orderBy('name')->get();
+        $employees  = User::orderBy('name')->get()->map(function ($emp) {
+            $emp->display_name = $emp->isArchived()
+                ? $emp->name . ' (Left' . ($emp->finish_date ? ': ' . $emp->finish_date->format('M Y') : '') . ')'
+                : $emp->name;
+            return $emp;
+        });
         $leaveTypes = LeaveType::orderBy('name')->get();
         $results         = null;
         $summary         = null;
