@@ -440,7 +440,7 @@
     {{-- ── Month view ── --}}
     <template x-if="view==='month'">
         <div>
-            <div class="ov-card" style="overflow-x:auto;">
+            <div class="ov-card">
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
                     <a href="{{ route('team.index') }}?view=month&month={{ $prevMonth }}"
                        style="font-size:15px;color:#888;text-decoration:none;line-height:1;padding:2px 6px;border-radius:4px;border:1px solid #e0e0e0;background:#f5f5f3;" title="Previous month">‹</a>
@@ -458,7 +458,7 @@
                             {{-- Sticky name header --}}
                             <th style="min-width:160px;text-align:left;font-size:11px;color:#aaa;font-weight:500;padding:0 12px 8px 0;position:sticky;left:0;background:#fff;z-index:2;"></th>
                             <template x-for="d in monthDayInfo" :key="d.num">
-                                <th :style="d.weekend ? 'width:26px;min-width:26px;text-align:center;padding:0 1px 8px;' : 'width:26px;min-width:26px;text-align:center;padding:0 1px 8px;'">
+                                <th style="text-align:center;padding:0 1px 8px;">
                                     <div :style="d.weekend ? 'font-size:10px;color:#ccc;font-weight:600;' : 'font-size:10px;color:#aaa;font-weight:600;'" x-text="d.num"></div>
                                     <div :style="d.weekend ? 'font-size:9px;color:#ddd;' : 'font-size:9px;color:#bbb;'" x-text="d.label"></div>
                                 </th>
@@ -487,7 +487,7 @@
                                 {{-- Day cells --}}
                                 <template x-for="(cell, i) in p.monthGrid" :key="i">
                                     <td style="padding:3px 1px;border-bottom:1px solid #f5f5f3;">
-                                        <div class="day-cell" :class="[cellBgCls(cell), cell.is_medical ? 'has-tip' : '']"
+                                        <div class="day-cell" style="width:auto;" :class="[cellBgCls(cell), cell.is_medical ? 'has-tip' : '']"
                                              :style="(cell.booked && !cell.is_medical && cell.c && cell.s !== 'wfh') ? 'background:'+cell.c+'55' : ''"
                                              @mouseenter="showCellTip($event, cell.tip || dayTitle(cell.s))"
                                              @mouseleave="hideCellTip()">
