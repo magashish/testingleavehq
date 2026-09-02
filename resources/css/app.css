@@ -24,7 +24,7 @@ body {
 
 /* Main content */
 .main { flex: 1; overflow-y: auto; }
-.page { padding: 28px 32px; max-width: 980px; }
+.page { padding: 28px 32px; }
 .page-header { margin-bottom: 24px; }
 .page-header h2 { font-size: 22px; font-weight: 600; }
 .page-header p { font-size: 14px; color: #666; margin-top: 4px; }
