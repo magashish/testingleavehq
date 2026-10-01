@@ -21,6 +21,7 @@
                 <select name="report" class="form-select" x-model="report">
                     <option value="late">Late arrivals (after 09:00)</option>
                     <option value="leave_summary">Annual leave summary</option>
+                    <option value="leave_balance">Leave balance by employee</option>
                     <option value="leave_history">Leave history by employee</option>
                 </select>
             </div>
@@ -48,16 +49,6 @@
                        :required="report === 'late'">
             </div>
 
-            {{-- Year — leave summary --}}
-            <div class="form-group" style="margin:0;" x-show="report === 'leave_summary'">
-                <label class="form-label">Year</label>
-                <select name="year" class="form-select" style="width:auto;">
-                    @foreach($years as $y)
-                        <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
-                    @endforeach
-                </select>
-            </div>
-
             {{-- Employee (required) + Leave type — leave history --}}
             <div class="form-group" style="margin:0;min-width:180px;" x-show="report === 'leave_history'">
                 <label class="form-label">Employee <span style="color:#ef4444;">*</span></label>
@@ -80,14 +71,192 @@
                 </select>
             </div>
 
+            {{-- Employee + Year — leave balance --}}
+            <div class="form-group" style="margin:0;min-width:180px;" x-show="report === 'leave_balance'">
+                <label class="form-label">Employee <span style="color:#ef4444;">*</span></label>
+                <select name="employee_id" class="form-select"
+                        :disabled="report !== 'leave_balance'"
+                        :required="report === 'leave_balance'">
+                    <option value="">Select employee…</option>
+                    @foreach($employees as $emp)
+                        <option value="{{ $emp->id }}" {{ ($reportType === 'leave_balance' && $employeeId == $emp->id) ? 'selected' : '' }}>
+                            {{ $emp->display_name ?? $emp->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group" style="margin:0;" x-show="report === 'leave_balance' || report === 'leave_summary'">
+                <label class="form-label">Year</label>
+                <select name="year" class="form-select" style="width:auto;">
+                    @foreach($years as $y)
+                        <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <div style="padding-bottom:1px;">
                 <button type="submit" class="btn btn-primary">Run report</button>
             </div>
         </form>
     </div>
 
+    {{-- ── Leave balance results ── --}}
+    @if($reportType === 'leave_balance' && $balanceData !== null)
+        @php
+            $emp         = $balanceEmployee;
+            $hasAllowance = $emp->hasHolidayAllowance();
+            $allowed     = $emp->days_allowed;
+            $approved    = $balanceData['approved_allowance'];
+            $pending     = $balanceData['pending_allowance'];
+            $remaining   = $hasAllowance ? max(0, $allowed - $approved) : null;
+            $remainColor = !$hasAllowance ? '#aaa' : ($remaining <= 5 ? '#ef4444' : ($remaining <= 10 ? '#f97316' : '#059669'));
+        @endphp
+
+        {{-- Stat cards --}}
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+            <div class="stat-card" style="flex:1;min-width:120px;">
+                <div class="stat-label">Allowance</div>
+                <div class="stat-val">{{ $hasAllowance ? $allowed : '—' }}</div>
+                <div class="stat-sub">days {{ $year }}</div>
+            </div>
+            <div class="stat-card" style="flex:1;min-width:120px;">
+                <div class="stat-label">Approved</div>
+                <div class="stat-val" style="color:#059669;">{{ number_format($approved, 1) }}</div>
+                <div class="stat-sub">days taken</div>
+            </div>
+            <div class="stat-card" style="flex:1;min-width:120px;">
+                <div class="stat-label">Pending</div>
+                <div class="stat-val" style="color:#f97316;">{{ number_format($pending, 1) }}</div>
+                <div class="stat-sub">awaiting approval</div>
+            </div>
+            <div class="stat-card" style="flex:1;min-width:120px;">
+                <div class="stat-label">Remaining</div>
+                <div class="stat-val" style="color:{{ $remainColor }};">
+                    {{ $hasAllowance ? number_format($remaining, 1) : '—' }}
+                </div>
+                <div class="stat-sub">{{ $hasAllowance ? 'days left' : 'no allowance' }}</div>
+            </div>
+            @if($hasAllowance && $pending > 0)
+            <div class="stat-card" style="flex:1;min-width:120px;">
+                <div class="stat-label">After pending</div>
+                @php $afterPending = max(0, $remaining - $pending); @endphp
+                <div class="stat-val" style="color:{{ $afterPending <= 5 ? '#ef4444' : '#888' }};">
+                    {{ number_format($afterPending, 1) }}
+                </div>
+                <div class="stat-sub">if all approved</div>
+            </div>
+            @endif
+        </div>
+
+        {{-- By leave type breakdown --}}
+        @if($balanceData['by_type']->isNotEmpty())
+        <div class="card" style="margin-bottom:16px;">
+            <div class="card-title" style="margin-bottom:12px;">Breakdown by leave type</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Leave type</th>
+                        <th style="text-align:center;">Counts toward allowance</th>
+                        <th style="text-align:center;">Approved</th>
+                        <th style="text-align:center;">Pending</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($balanceData['by_type'] as $lt)
+                        <tr>
+                            <td>
+                                <span style="font-size:12px;padding:2px 10px;border-radius:999px;font-weight:500;background:{{ $lt['color'] }}33;color:{{ $lt['color'] }};">
+                                    {{ $lt['name'] }}
+                                </span>
+                            </td>
+                            <td style="text-align:center;font-size:12px;">
+                                @if($lt['counts'])
+                                    <span style="color:#059669;font-weight:500;">Yes</span>
+                                @else
+                                    <span style="color:#aaa;">No</span>
+                                @endif
+                            </td>
+                            <td style="text-align:center;font-weight:500;font-size:13px;">
+                                {{ $lt['approved'] > 0 ? number_format($lt['approved'], 1) : '—' }}
+                            </td>
+                            <td style="text-align:center;font-size:13px;color:#f97316;">
+                                {{ $lt['pending'] > 0 ? number_format($lt['pending'], 1) : '—' }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+
+        {{-- All leave requests for the year --}}
+        <div class="card">
+            <div class="card-title" style="margin-bottom:12px;">
+                {{ $emp->name }} — all leave in {{ $year }}
+                <span style="font-size:12px;font-weight:400;color:#888;margin-left:4px;">
+                    {{ $balanceData['approved_count'] }} approved &bull; {{ $balanceData['pending_count'] }} pending &bull; {{ $balanceData['rejected_count'] }} rejected
+                </span>
+            </div>
+
+            @if($balanceData['leaves']->isEmpty())
+                <div class="empty-state" style="padding:30px 0;">No leave records for {{ $year }}.</div>
+            @else
+                <div class="report-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Leave type</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th style="text-align:center;">Days</th>
+                            <th style="text-align:center;">Status</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($balanceData['leaves'] as $lr)
+                            @php
+                                $sc = match($lr->status) {
+                                    'approved' => 'background:#d1fae5;color:#065f46;',
+                                    'rejected' => 'background:#fee2e2;color:#991b1b;',
+                                    default    => 'background:#fef3c7;color:#92400e;',
+                                };
+                                $isFuture = $lr->start_date->isFuture();
+                            @endphp
+                            <tr style="{{ $lr->status === 'rejected' ? 'opacity:0.5;' : '' }}">
+                                <td>
+                                    @if($lr->leaveType)
+                                        <span style="font-size:11px;padding:2px 8px;border-radius:999px;font-weight:500;background:{{ $lr->leaveType->color }}33;color:{{ $lr->leaveType->color }};">
+                                            {{ $lr->leaveType->name }}
+                                        </span>
+                                    @else
+                                        <span style="color:#bbb;font-size:12px;">Annual leave</span>
+                                    @endif
+                                </td>
+                                <td style="font-size:13px;">
+                                    {{ $lr->start_date->format('j M Y') }}
+                                    @if($isFuture && $lr->status === 'pending')
+                                        <span style="font-size:10px;color:#f97316;margin-left:4px;">upcoming</span>
+                                    @endif
+                                </td>
+                                <td style="font-size:13px;">{{ $lr->end_date->format('j M Y') }}</td>
+                                <td style="text-align:center;font-weight:500;font-size:13px;">{{ $lr->days }}</td>
+                                <td style="text-align:center;">
+                                    <span style="font-size:11px;padding:2px 8px;border-radius:999px;font-weight:500;{{ $sc }}">
+                                        {{ $lr->status }}
+                                    </span>
+                                </td>
+                                <td style="font-size:12px;color:#888;max-width:200px;">{{ $lr->reason ?: '—' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                </div>
+            @endif
+        </div>
+
     {{-- ── Late arrivals results ── --}}
-    @if($reportType === 'late' && $results !== null)
+    @elseif($reportType === 'late' && $results !== null)
         {{-- Summary strip --}}
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
             <div class="stat-card" style="flex:1;min-width:140px;">

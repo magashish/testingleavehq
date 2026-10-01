@@ -23,12 +23,14 @@ class ReportsController extends Controller
             return $emp;
         });
         $leaveTypes = LeaveType::orderBy('name')->get();
-        $results         = null;
-        $summary         = null;
-        $leaveData       = null;
-        $historyData     = null;
-        $historyEmployee = null;
+        $results          = null;
+        $summary          = null;
+        $leaveData        = null;
+        $historyData      = null;
+        $historyEmployee  = null;
         $historyLeaveType = null;
+        $balanceData      = null;
+        $balanceEmployee  = null;
 
         $employeeId  = $request->get('employee_id');
         $leaveTypeId = $request->get('leave_type_id');
@@ -38,7 +40,47 @@ class ReportsController extends Controller
         $year        = (int) $request->get('year', now()->year);
         $years       = range(now()->year, max(now()->year - 4, 2020));
 
-        if ($reportType === 'leave_history' && $request->has('report') && $employeeId) {
+        if ($reportType === 'leave_balance' && $request->has('report') && $employeeId) {
+            $balanceEmployee = User::findOrFail($employeeId);
+
+            $allLeaves = LeaveRequest::with('leaveType')
+                ->where('employee_id', $employeeId)
+                ->whereYear('start_date', $year)
+                ->orderBy('start_date')
+                ->get();
+
+            $approved = $allLeaves->where('status', 'approved');
+            $pending  = $allLeaves->where('status', 'pending');
+            $rejected = $allLeaves->where('status', 'rejected');
+
+            $approvedAllowanceDays = $approved->filter(fn($lr) =>
+                is_null($lr->leave_type_id) || ($lr->leaveType?->counts_toward_allowance)
+            )->sum('days');
+
+            $pendingAllowanceDays = $pending->filter(fn($lr) =>
+                is_null($lr->leave_type_id) || ($lr->leaveType?->counts_toward_allowance)
+            )->sum('days');
+
+            $byType = LeaveType::orderBy('name')->get()->map(fn($lt) => [
+                'id'       => $lt->id,
+                'name'     => $lt->name,
+                'color'    => $lt->color,
+                'counts'   => $lt->counts_toward_allowance,
+                'approved' => $approved->where('leave_type_id', $lt->id)->sum('days'),
+                'pending'  => $pending->where('leave_type_id', $lt->id)->sum('days'),
+            ])->filter(fn($lt) => $lt['approved'] > 0 || $lt['pending'] > 0)->values();
+
+            $balanceData = [
+                'leaves'                => $allLeaves,
+                'approved_count'        => $approved->count(),
+                'pending_count'         => $pending->count(),
+                'rejected_count'        => $rejected->count(),
+                'approved_allowance'    => $approvedAllowanceDays,
+                'pending_allowance'     => $pendingAllowanceDays,
+                'by_type'               => $byType,
+            ];
+
+        } elseif ($reportType === 'leave_history' && $request->has('report') && $employeeId) {
             $historyEmployee  = User::findOrFail($employeeId);
             $historyLeaveType = $leaveTypeId ? LeaveType::find($leaveTypeId) : null;
 
@@ -136,6 +178,7 @@ class ReportsController extends Controller
         return view('reports.index', compact(
             'employees', 'leaveTypes', 'results', 'summary', 'leaveData',
             'historyData', 'historyEmployee', 'historyLeaveType',
+            'balanceData', 'balanceEmployee',
             'employeeId', 'leaveTypeId', 'from', 'to', 'reportType', 'year', 'years'
         ));
     }
