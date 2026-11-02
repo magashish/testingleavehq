@@ -37,7 +37,7 @@ class TeamController extends Controller
         $nextMonth      = $viewMonth->copy()->addMonth()->format('Y-m');
         $viewMonthLabel = $viewMonth->format('F Y');
         $isCurrentMonth = $viewMonth->isSameMonth(now());
-        $initialView    = $request->get('view', 'today');
+        $initialView    = $request->get('view', 'week');
         $preloadFrom    = $request->get('from', '');
         $preloadTo      = $request->get('to', '');
         if ($preloadFrom && $preloadTo) {
