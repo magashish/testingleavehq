@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CheckinController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportsController;
@@ -62,6 +63,11 @@ Route::middleware(['auth', 'verified', 'not_archived'])->group(function () {
     Route::patch('/settings/departments/{department}', [SettingsController::class, 'updateDepartment'])->name('settings.departments.update');
     Route::delete('/settings/departments/{department}', [SettingsController::class, 'removeDepartment'])->name('settings.departments.remove');
     Route::patch('/settings/departments/{department}/members', [SettingsController::class, 'updateDepartmentMembers'])->name('settings.departments.members');
+
+    // Google Calendar
+    Route::get('/google/redirect', [GoogleCalendarController::class, 'redirect'])->name('google.redirect');
+    Route::get('/google/callback', [GoogleCalendarController::class, 'callback'])->name('google.callback');
+    Route::post('/google/disconnect', [GoogleCalendarController::class, 'disconnect'])->name('google.disconnect');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -39,6 +39,10 @@ class User extends Authenticatable
         'work_location',
         'archived_at',
         'finish_date',
+        'google_access_token',
+        'google_refresh_token',
+        'google_token_expires_at',
+        'google_calendar_id',
     ];
 
     protected $hidden = [
@@ -50,8 +54,9 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password'          => 'hashed',
         'is_manager'        => 'boolean',
-        'archived_at'       => 'datetime',
-        'finish_date'       => 'date',
+        'archived_at'            => 'datetime',
+        'finish_date'            => 'date',
+        'google_token_expires_at' => 'datetime',
     ];
 
     // ── Scopes ───────────────────────────────────────────────────────────────
@@ -81,6 +86,11 @@ class User extends Authenticatable
     public function isIntern(): bool
     {
         return $this->role_type === self::ROLE_INTERN;
+    }
+
+    public function hasGoogleCalendar(): bool
+    {
+        return $this->google_refresh_token !== null;
     }
 
     public function isArchived(): bool

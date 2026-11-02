@@ -97,6 +97,38 @@
         @include('profile.partials.update-password-form')
     </div>
 
+    {{-- ── Google Calendar ── --}}
+    <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Google Calendar</div>
+        @if(session('status') === 'google-connected')
+            <div class="alert alert-success" style="margin-bottom:12px;">Google Calendar connected successfully.</div>
+        @elseif(session('status') === 'google-disconnected')
+            <div class="alert alert-success" style="margin-bottom:12px;">Google Calendar disconnected.</div>
+        @elseif(session('status') === 'google-denied')
+            <div class="alert alert-error" style="margin-bottom:12px;">Google Calendar access was denied.</div>
+        @elseif(session('status') === 'google-error')
+            <div class="alert alert-error" style="margin-bottom:12px;">Something went wrong connecting to Google. Please try again.</div>
+        @endif
+        @if($user->google_refresh_token)
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+                    <span style="font-size:13px;color:#059669;font-weight:500;">Connected</span>
+                </div>
+                <span style="font-size:12px;color:#aaa;">Your approved leaves will sync to your Google Calendar.</span>
+                <form method="POST" action="{{ route('google.disconnect') }}" style="margin-left:auto;">
+                    @csrf
+                    <button type="submit" class="btn btn-outline btn-sm" onclick="return confirm('Disconnect Google Calendar?')">Disconnect</button>
+                </form>
+            </div>
+        @else
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <p style="font-size:13px;color:#666;margin:0;">Connect your Google Calendar so approved leave is automatically added as events.</p>
+                <a href="{{ route('google.redirect') }}" class="btn btn-primary btn-sm" style="margin-left:auto;white-space:nowrap;">Connect Google Calendar</a>
+            </div>
+        @endif
+    </div>
+
     {{-- ── Delete account ── --}}
     <div class="card">
         <div class="card-title" style="color:#ef4444;">Danger Zone</div>

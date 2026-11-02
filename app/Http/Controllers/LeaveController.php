@@ -9,6 +9,7 @@ use App\Models\LeaveType;
 use App\Models\User;
 use App\Mail\LeaveRequested;
 use App\Mail\LeaveStatusUpdated;
+use App\Services\GoogleCalendarService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -191,6 +192,10 @@ class LeaveController extends Controller
         $leave->load(['employee', 'leaveType', 'approvedBy']);
 
         if ($isManager) {
+            // Auto-approved — push to employee's Google Calendar immediately
+            $eventId = app(GoogleCalendarService::class)->createEvent($leave->employee, $leave);
+            if ($eventId) $leave->update(['google_event_id' => $eventId]);
+
             // Manager booked directly — notify the employee
             Mail::to($leave->employee->email)->send(new LeaveStatusUpdated($leave));
         } else {
@@ -243,6 +248,17 @@ class LeaveController extends Controller
         ]);
 
         $leave->load(['employee', 'leaveType', 'approvedBy']);
+
+        // Sync with Google Calendar
+        $google = app(GoogleCalendarService::class);
+        if ($validated['status'] === 'approved') {
+            $eventId = $google->createEvent($leave->employee, $leave);
+            if ($eventId) $leave->update(['google_event_id' => $eventId]);
+        } elseif ($validated['status'] === 'rejected' && $leave->google_event_id) {
+            $google->deleteEvent($leave->employee, $leave->google_event_id);
+            $leave->update(['google_event_id' => null]);
+        }
+
         Mail::to($leave->employee->email)->send(new LeaveStatusUpdated($leave));
 
         return back()->with('success', 'Leave ' . $validated['status'] . '.');
@@ -254,6 +270,10 @@ class LeaveController extends Controller
 
         if (!$user->isManager() && $leave->employee_id !== $user->id) {
             abort(403);
+        }
+
+        if ($leave->google_event_id) {
+            app(GoogleCalendarService::class)->deleteEvent($leave->employee, $leave->google_event_id);
         }
 
         $leave->delete();
