@@ -98,6 +98,7 @@ class TeamController extends Controller
                 'statusTypeName' => $todayFull['type_name'] ?? null,
                 'is_medical'     => $todayFull['is_medical'] ?? false,
                 'is_half_day'    => $todayFull['is_half_day'] ?? false,
+                'half_day_part'  => $todayFull['half_day_part'] ?? null,
                 'signed_in'   => $signedIn,
                 'time'        => $todayCheckin?->checked_in_at?->format('H:i') ?? '—',
                 'week'        => array_map(fn($d) => $this->getUserStatusFull($emp, $d, $publicHolidays, $wfhLeaveColor), $weekDates),
@@ -299,9 +300,12 @@ class TeamController extends Controller
             $status    = $isSick ? 'sick' : ($isWfh ? 'wfh' : 'leave');
             $typeName  = $leave->leaveType?->name ?? ($isSick ? 'Sick leave' : 'Leave');
             $tip       = $typeName;
-            if ($leave->is_half_day) $tip .= ' (half day)';
+            if ($leave->is_half_day) {
+                $part = $leave->half_day_part;
+                $tip .= $part ? ' (' . ($part === 'morning' ? 'AM' : 'PM') . ')' : ' (half day)';
+            }
             if ($leave->reason) $tip .= ': ' . $leave->reason;
-            return ['s' => $status, 'c' => $color, 'tip' => $tip, 'type_name' => $typeName, 'booked' => true, 'loc' => $empLoc, 'is_medical' => false, 'is_half_day' => $leave->is_half_day];
+            return ['s' => $status, 'c' => $color, 'tip' => $tip, 'type_name' => $typeName, 'booked' => true, 'loc' => $empLoc, 'is_medical' => false, 'is_half_day' => $leave->is_half_day, 'half_day_part' => $leave->half_day_part];
         }
 
         $loc   = $emp->work_location ?? 'unknown';

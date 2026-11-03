@@ -27,6 +27,8 @@
 .nb-info { background:#ddeeff;color:#1558a0; }
 .has-tip { position:relative; }
 .has-tip::after { content:''; position:absolute; top:0; right:0; width:0; height:0; border-style:solid; border-width:0 7px 7px 0; border-color:transparent #e53e3e transparent transparent; border-top-right-radius:6px; pointer-events:none; }
+.has-half-tip { position:relative; }
+.has-half-tip::after { content:''; position:absolute; top:0; right:0; width:0; height:0; border-style:solid; border-width:0 7px 7px 0; border-color:transparent #f59e0b transparent transparent; border-top-right-radius:6px; pointer-events:none; }
 .cell-tip { position:fixed; background:#1a1a1a; color:#fff; font-size:11px; padding:5px 9px; border-radius:6px; white-space:nowrap; pointer-events:none; z-index:9999; box-shadow:0 2px 8px rgba(0,0,0,.25); transform:translateX(-50%); }
 .fbtn { font-size:11px;padding:3px 10px;border-radius:99px;border:1px solid #e0e0e0;background:#f5f5f3;color:#888;cursor:pointer; }
 .fbtn.on { background:#fff;color:#1a1a1a;border-color:#aaa;font-weight:500; }
@@ -230,7 +232,7 @@
                                     <div style="font-size:11px;color:#888;" x-text="p.role"></div>
                                 </div>
                                 <template x-for="(cell,di) in p.week" :key="di">
-                                    <div class="day-cell" style="width:auto;" :class="[cellBgCls(cell), di===todayIdx ? 'today-col' : '', cell.is_medical ? 'has-tip' : '']"
+                                    <div class="day-cell" style="width:auto;" :class="[cellBgCls(cell), di===todayIdx ? 'today-col' : '', cell.is_medical ? 'has-tip' : '', cell.is_half_day ? 'has-half-tip' : '']"
                                          :style="(cell.booked && !cell.is_medical && cell.c && cell.s !== 'wfh') ? 'background:'+cell.c+'55' : ''"
                                          @mouseenter="showCellTip($event, cell.tip || dayTitle(cell.s))"
                                          @mouseleave="hideCellTip()">
@@ -409,7 +411,7 @@
                                         </td>
                                         <template x-for="(cell, i) in p.dayGrid" :key="i">
                                             <td style="padding:3px 1px;border-bottom:1px solid #f5f5f3;">
-                                                <div class="day-cell" :class="[cellBgCls(cell), cell.is_medical ? 'has-tip' : '']"
+                                                <div class="day-cell" :class="[cellBgCls(cell), cell.is_medical ? 'has-tip' : '', cell.is_half_day ? 'has-half-tip' : '']"
                                                      :style="(cell.booked && !cell.is_medical && cell.c && cell.s !== 'wfh') ? 'background:'+cell.c+'55' : ''"
                                                      @mouseenter="showCellTip($event, cell.tip || dayTitle(cell.s))"
                                                      @mouseleave="hideCellTip()">
@@ -487,7 +489,7 @@
                                 {{-- Day cells --}}
                                 <template x-for="(cell, i) in p.monthGrid" :key="i">
                                     <td style="padding:3px 1px;border-bottom:1px solid #f5f5f3;">
-                                        <div class="day-cell" style="width:auto;" :class="[cellBgCls(cell), cell.is_medical ? 'has-tip' : '']"
+                                        <div class="day-cell" style="width:auto;" :class="[cellBgCls(cell), cell.is_medical ? 'has-tip' : '', cell.is_half_day ? 'has-half-tip' : '']"
                                              :style="(cell.booked && !cell.is_medical && cell.c && cell.s !== 'wfh') ? 'background:'+cell.c+'55' : ''"
                                              @mouseenter="showCellTip($event, cell.tip || dayTitle(cell.s))"
                                              @mouseleave="hideCellTip()">
@@ -544,7 +546,7 @@ function teamOverview() {
         isLeaveCell(s) { return s === 'leave' || s === 'sick' || s.startsWith('medical'); },
         cellLbl(cell) {
             if (cell.booked && !cell.is_medical && cell.loc) {
-                if (cell.is_half_day) return '½';
+                if (cell.is_half_day) return '½' + (cell.half_day_part === 'morning' ? 'AM' : cell.half_day_part === 'afternoon' ? 'PM' : '');
                 if (cell.s === 'wfh') return 'WFH';
                 return '';
             }
