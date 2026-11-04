@@ -106,6 +106,8 @@ class SettingsController extends Controller
             'days_allowed'  => 'required|integer|min:0|max:60',
             'color'         => 'required|string|max:10',
             'work_location' => 'required|in:office,remote,wfh',
+            'working_days'  => 'nullable|array',
+            'working_days.*'=> 'in:monday,tuesday,wednesday,thursday,friday',
         ];
 
         $validated = $request->validate($rules);
@@ -113,6 +115,10 @@ class SettingsController extends Controller
         if ($validated['role_type'] === 'admin' && !Auth::user()->isAdmin()) {
             abort(403, 'Only admins can grant admin access.');
         }
+
+        $allDays = ['monday','tuesday','wednesday','thursday','friday'];
+        $selectedDays = $validated['working_days'] ?? $allDays;
+        $workingDays = (count($selectedDays) === 5) ? null : $selectedDays;
 
         $user->update([
             'name'          => $validated['name'],
@@ -123,6 +129,7 @@ class SettingsController extends Controller
             'days_allowed'  => $validated['days_allowed'],
             'color'         => $validated['color'],
             'work_location' => $validated['work_location'],
+            'working_days'  => $workingDays,
         ]);
 
         return back()->with('success', "{$user->name} updated.");

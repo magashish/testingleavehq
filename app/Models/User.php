@@ -43,6 +43,7 @@ class User extends Authenticatable
         'google_refresh_token',
         'google_token_expires_at',
         'google_calendar_id',
+        'working_days',
     ];
 
     protected $hidden = [
@@ -57,6 +58,7 @@ class User extends Authenticatable
         'archived_at'            => 'datetime',
         'finish_date'            => 'date',
         'google_token_expires_at' => 'datetime',
+        'working_days'            => 'array',
     ];
 
     // ── Scopes ───────────────────────────────────────────────────────────────

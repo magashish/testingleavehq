@@ -256,6 +256,13 @@ class TeamController extends Controller
             return ['s' => 'holiday', 'c' => null, 'tip' => 'Public holiday', 'booked' => true, 'loc' => null, 'is_medical' => false];
         }
 
+        if (!empty($emp->working_days)) {
+            $dayName = strtolower(Carbon::parse($date)->format('l'));
+            if (!in_array($dayName, $emp->working_days)) {
+                return ['s' => 'nonworking', 'c' => null, 'tip' => 'Non-working day', 'booked' => false, 'loc' => null, 'is_medical' => false, 'is_half_day' => false];
+            }
+        }
+
         $leaves = $emp->leaveRequests->filter(
             fn($l) => $l->start_date->toDateString() <= $date && $l->end_date->toDateString() >= $date
         );

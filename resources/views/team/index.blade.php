@@ -17,6 +17,7 @@
 .dc-in   { background:#FAF9F6; }   .dc-re  { background:#ede9fe; }
 .dc-le   { background:#efefed; }  .dc-si  { background:#fde8e8; }
 .dc-off  { background:#f5f5f3; }  .dc-hol { background:#ddeeff; }
+.dc-nw   { background:#f0f0f0; border-color:#e0e0e0; }
 .dc-med  { background:#fff0d0; }  .dc-wfh { background:#ede9fe; }
 .dcl-in  { color:#555; }          .dcl-re { color:#5b21b6; }
 .dcl-le  { color:#555; }          .dcl-si { color:#a02020; }
@@ -556,6 +557,7 @@ function teamOverview() {
             return this.dayLbl(cell.s);
         },
         cellBgCls(cell) {
+            if (cell.s === 'nonworking') return 'dc-nw';
             if (cell.s === 'wfh') return 'dc-wfh';
             const loc = (cell.booked && cell.loc) ? cell.loc : cell.s;
             if (loc === 'holiday') return 'dc-hol';
@@ -687,6 +689,7 @@ function teamOverview() {
             if (s === 'medical-morning')   return 'Medical (AM)';
             if (s === 'medical-afternoon') return 'Medical (PM)';
             if (s === 'medical')           return 'Medical appt';
+            if (s === 'nonworking') return 'Non-working day';
             return {office:'In office',remote:'Remote',wfh:'WFH',leave:'On leave',sick:'Sick',holiday:'Public holiday',unknown:'Not set'}[s] || s;
         },
         pillCls(s) {
@@ -695,17 +698,17 @@ function teamOverview() {
         },
         dayCellCls(s) {
             if (s.startsWith('medical')) return 'dc-med';
-            return ({office:'dc-in',remote:'dc-re',wfh:'dc-wfh',leave:'dc-le',sick:'dc-si',holiday:'dc-hol',unknown:'dc-off'}[s]||'dc-off');
+            return ({office:'dc-in',remote:'dc-re',wfh:'dc-wfh',leave:'dc-le',sick:'dc-si',holiday:'dc-hol',unknown:'dc-off',nonworking:'dc-nw'}[s]||'dc-off');
         },
         dayLblCls(s) {
             if (s.startsWith('medical')) return 'dcl-med';
-            return ({office:'dcl-in',remote:'dcl-re',wfh:'dcl-wfh',leave:'dcl-le',sick:'dcl-si',holiday:'dcl-hol',unknown:'dcl-off'}[s]||'dcl-off');
+            return ({office:'dcl-in',remote:'dcl-re',wfh:'dcl-wfh',leave:'dcl-le',sick:'dcl-si',holiday:'dcl-hol',unknown:'dcl-off',nonworking:'dcl-off'}[s]||'dcl-off');
         },
         dayLbl(s) {
             if (s === 'medical-morning')   return 'M·AM';
             if (s === 'medical-afternoon') return 'M·PM';
             if (s === 'medical')           return 'M';
-            return ({office:'In',remote:'Re',wfh:'WFH',leave:'Lv',sick:'Sick',holiday:'PH',unknown:'—'}[s]||'—');
+            return ({office:'In',remote:'Re',wfh:'WFH',leave:'Lv',sick:'Sick',holiday:'PH',unknown:'—',nonworking:'×'}[s]||'—');
         },
         dayTitle(s) { return this.statusLabel(s); },
     };

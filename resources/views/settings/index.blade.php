@@ -153,6 +153,19 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <label class="form-label">Working days <span style="font-size:11px;color:#aaa;font-weight:400;">(leave all ticked for full-time Mon–Fri)</span></label>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">
+                            @foreach(['monday'=>'Mon','tuesday'=>'Tue','wednesday'=>'Wed','thursday'=>'Thu','friday'=>'Fri'] as $val => $lbl)
+                                <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;">
+                                    <input type="checkbox" name="working_days[]" value="{{ $val }}"
+                                           style="width:15px;height:15px;cursor:pointer;"
+                                           :checked="!editEmp.working_days || editEmp.working_days.includes('{{ $val }}')">
+                                    {{ $lbl }}
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">Colour</label>
                         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:4px;">
                             @foreach(['#e879f9','#38bdf8','#fb923c','#a78bfa','#34d399','#f472b6','#facc15','#60a5fa'] as $c)
@@ -483,7 +496,8 @@
                                             role_type: '{{ $emp->role_type }}',
                                             days_allowed: {{ $emp->days_allowed }},
                                             color: '{{ $emp->color }}',
-                                            work_location: '{{ $emp->work_location ?? 'office' }}'
+                                            work_location: '{{ $emp->work_location ?? 'office' }}',
+                                            working_days: {!! json_encode($emp->working_days) !!}
                                         }; editEmpColor = '{{ $emp->color }}'; showEditEmpModal = true">
                                         <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                     </button>
