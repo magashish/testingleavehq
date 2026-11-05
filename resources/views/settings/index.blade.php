@@ -23,6 +23,7 @@
     empColor: '#38bdf8',
     editEmpColor: '#38bdf8',
     editEmp: {},
+    editWorkingDays: ['monday','tuesday','wednesday','thursday','friday'],
     editLT: {},
     editDept: {},
     editCheckin: {},
@@ -159,7 +160,7 @@
                                 <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;">
                                     <input type="checkbox" name="working_days[]" value="{{ $val }}"
                                            style="width:15px;height:15px;cursor:pointer;"
-                                           :checked="!editEmp.working_days || editEmp.working_days.includes('{{ $val }}')">
+                                           x-model="editWorkingDays">
                                     {{ $lbl }}
                                 </label>
                             @endforeach
@@ -496,9 +497,10 @@
                                             role_type: '{{ $emp->role_type }}',
                                             days_allowed: {{ $emp->days_allowed }},
                                             color: '{{ $emp->color }}',
-                                            work_location: '{{ $emp->work_location ?? 'office' }}',
-                                            working_days: {!! json_encode($emp->working_days) !!}
-                                        }; editEmpColor = '{{ $emp->color }}'; showEditEmpModal = true">
+                                            work_location: '{{ $emp->work_location ?? 'office' }}'
+                                        };
+                                        editWorkingDays = {{ $emp->working_days ? json_encode($emp->working_days) : "['monday','tuesday','wednesday','thursday','friday']" }};
+                                        editEmpColor = '{{ $emp->color }}'; showEditEmpModal = true">
                                         <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                     </button>
                                     <button class="icon-btn" title="Change password"
